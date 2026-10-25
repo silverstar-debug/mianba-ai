@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>面霸 AI · 模拟面试</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#08080c',
+          panel: '#0f0f17',
+          line: 'rgba(255,255,255,0.08)',
+        },
+        fontFamily: {
+          sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'system-ui', 'sans-serif'],
+        },
+        animation: {
+          'fade-up': 'fadeUp .35s ease-out both',
+          'pulse-slow': 'pulse 2.6s cubic-bezier(0.4,0,0.6,1) infinite',
+        },
+        keyframes: {
+          fadeUp: {
+            '0%': { opacity: 0, transform: 'translateY(10px)' },
+            '100%': { opacity: 1, transform: 'translateY(0)' },
+          },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { height: 100%; }
+  body {
+    background: #08080c;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 背景光斑 */
+  .glow::before, .glow::after {
+    content: '';
+    position: fixed;
+    border-radius: 9999px;
+    filter: blur(120px);
+    opacity: .35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow::before {
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, #4f46e5 0%, transparent 70%);
+    top: -180px; left: -140px;
+  }
+  .glow::after {
+    width: 560px; height: 560px;
+    background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
+    bottom: -220px; right: -160px;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.12);
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
+
+  .bubble-ai {
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    border: 1px solid rgba(255,255,255,.09);
+    backdrop-filter: blur(8px);
+  }
+  .bubble-user {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 8px 24px -8px rgba(124,58,237,.6);
+  }
+  .mic-listening {
+    background: linear-gradient(135deg, #ef4444, #f97316) !important;
+    box-shadow: 0 0 0 0 rgba(239,68,68,.7);
+    animation: micPulse 1.2s infinite;
+  }
+  @keyframes micPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(239,68,68,.6); }
+    70%  { box-shadow: 0 0 0 16px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  }
+  .typing span {
+    display: inline-block; width: 6px; height: 6px; margin: 0 2px;
+    background: #a5b4fc; border-radius: 999px; opacity: .4;
+    animation: blink 1.4s infinite both;
+  }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% { opacity:.25; transform: translateY(0); } 40% { opacity:1; transform: translateY(-3px); } }
+
+  .report-card {
+    background:
+      radial-gradient(120% 120% at 0% 0%, rgba(79,70,229,.18), transparent 55%),
+      radial-gradient(120% 120% at 100% 0%, rgba(124,58,237,.16), transparent 55%),
+      rgba(255,255,255,.03);
+    border: 1px solid rgba(124,58,237,.35);
+    box-shadow: 0 0 60px -20px rgba(124,58,237,.55);
+  }
+  .ring {
+    background: conic-gradient(var(--ring-color, #7c3aed) calc(var(--pct) * 1%), rgba(255,255,255,.07) 0);
+  }
+  textarea { resize: none; }
+  .btn-grad {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 8px 24px -10px rgba(124,58,237,.8);
+  }
+  .btn-grad:active { transform: scale(.97); }
+  .btn-grad:disabled { opacity: .4; box-shadow: none; }
+  select option { background: #0f0f17; color: #e5e7eb; }
+</style>
+</head>
+
+<body class="glow font-sans text-gray-200 antialiased">
+
+<div class="relative z-10 flex h-screen flex-col">
+
+  <!-- ============ 顶栏 ============ -->
+  <header class="shrink-0 border-b border-line bg-black/40 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
+
+      <div class="flex items-center gap-3">
+        <div class="grid h-9 w-9 place-items-center rounded-xl btn-grad">
+          <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>
+          </svg>
+        </div>
+        <div class="leading-tight">
+          <h1 class="text-[15px] font-semibold tracking-tight text-white">面霸 AI</h1>
+          <p class="text-[11px] text-gray-500">面试紧张脱敏训练舱</p>
+        </div>
+      </div>
+
+      <div class="ml-auto flex items-center gap-2 sm:gap-3">
+        <!-- 岗位：可直接输入，也可从下拉建议里选 -->
+        <label class="hidden sm:block text-[11px] text-gray-500">岗位</label>
+        <div class="relative">
+          <input id="roleInput" type="text" list="rolePresets" maxlength="40"
+            placeholder="输入岗位，如：产品经理"
+            autocomplete="off" spellcheck="false"
+            class="w-[132px] rounded-lg border border-line bg-panel/80 px-3 py-2 pr-7 text-[13px] text-gray-200 placeholder-gray-600 outline-none transition focus:border-indigo-500/60 sm:w-[168px]" />
+          <!-- 清空按钮 -->
+          <button id="roleClear" type="button" title="清空"
+            class="absolute right-1.5 top-1/2 hidden -translate-y-1/2 rounded p-1 text-gray-500 transition hover:text-white">
+            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <datalist id="rolePresets">
+          <option value="产品经理"></option>
+          <option value="前端开发"></option>
+          <option value="数据分析"></option>
+          <option value="后端开发"></option>
+          <option value="算法工程师"></option>
+          <option value="测试工程师"></option>
+          <option value="UI 设计师"></option>
+          <option value="运营"></option>
+          <option value="人力资源"></option>
+          <option value="销售"></option>
+          <option value="财务"></option>
+          <option value="项目经理"></option>
+          <option value="教师"></option>
+          <option value="公务员面试"></option>
+          <option value="考研复试"></option>
+        </datalist>
+
+        <!-- 压力等级 -->
+        <select id="pressureSelect"
+          class="rounded-lg border border-line bg-panel/80 px-3 py-2 text-[13px] text-gray-200 outline-none transition focus:border-indigo-500/60">
+          <option value="1">L1 温和陪练</option>
+          <option value="2" selected>L2 标准面试</option>
+          <option value="3">L3 细致深挖</option>
+          <option value="4">L4 压力面试</option>
+          <option value="5">L5 高压终面</option>
+        </select>
+
+        <!-- 语音播报开关 -->
+        <button id="ttsToggle" title="AI 语音播报"
+          class="grid h-9 w-9 place-items-center rounded-lg border border-line bg-panel/80 text-gray-400 transition hover:text-white">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5 6 9H2v6h4l5 4V5Z"/>
+            <path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/>
+          </svg>
+        </button>
+
+        <!-- 重新开始 -->
+        <button id="resetBtn"
+          class="rounded-lg border border-line bg-panel/80 px-3 py-2 text-[13px] text-gray-300 transition hover:border-indigo-500/50 hover:text-white">
+          重开
+        </button>
+      </div>
+    </div>
+
+    <!-- 状态条 -->
+    <div class="mx-auto flex max-w-5xl items-center gap-3 px-4 pb-2 text-[11px] text-gray-500 sm:px-6">
+      <span id="statusDot" class="inline-block h-1.5 w-1.5 rounded-full bg-gray-600"></span>
+      <span id="statusText">连接中…</span>
+      <span class="text-gray-700">·</span>
+      <span id="roundText">未开始</span>
+      <span class="ml-auto hidden sm:inline" id="speechHint"></span>
+    </div>
+  </header>
+
+  <!-- ============ 聊天区 ============ -->
+  <main id="chatArea" class="scrollbar-thin flex-1 overflow-y-auto">
+    <div id="messages" class="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6">
+
+      <!-- 欢迎卡片 -->
+      <div id="welcome" class="animate-fade-up">
+        <div class="rounded-2xl border border-line bg-panel/60 p-6 backdrop-blur">
+          <h2 class="text-lg font-semibold text-white">准备好了吗？</h2>
+          <p class="mt-2 text-[13.5px] leading-relaxed text-gray-400">
+            <span class="text-indigo-300 font-medium">在顶部输入你的目标岗位</span>（可以直接打字，比如「用户运营」「考研复试」「Java 后端」），选好压力等级，点下面的
+            <span class="text-indigo-300 font-medium">开始面试</span>。
+            AI 面试官会按你的回答追问，共 <span class="text-gray-200">4 轮</span>，最后给出评分报告。
+          </p>
+          <div class="mt-4 grid grid-cols-1 gap-2 text-[12.5px] text-gray-500 sm:grid-cols-3">
+            <div class="rounded-lg border border-line bg-black/30 px-3 py-2">
+              <span class="text-indigo-300">① 引用原话</span> 追问你刚说的点
+            </div>
+            <div class="rounded-lg border border-line bg-black/30 px-3 py-2">
+              <span class="text-indigo-300">② 单点深挖</span> 一个点往下钻
+            </div>
+            <div class="rounded-lg border border-line bg-black/30 px-3 py-2">
+              <span class="text-indigo-300">③ 可控压力</span> 随时可以降级
+            </div>
+          </div>
+          <button id="startBtn"
+            class="mt-5 w-full rounded-xl btn-grad px-5 py-3 text-[14px] font-medium text-white transition active:scale-[.98] sm:w-auto sm:px-8">
+            开始面试
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ============ 输入区 ============ -->
+  <footer class="shrink-0 border-t border-line bg-black/50 backdrop-blur-xl">
+    <div class="mx-auto max-w-3xl px-4 py-3 sm:px-6">
+
+      <div class="flex items-end gap-2">
+
+        <!-- 按住说话 -->
+        <button id="micBtn"
+          class="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line bg-panel text-gray-300 transition hover:border-indigo-500/50 hover:text-white disabled:opacity-40">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>
+          </svg>
+          <span id="micLabel" class="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-2 py-0.5 text-[10px] font-medium text-white">正在听…</span>
+        </button>
+
+        <!-- 输入框 -->
+        <div class="relative flex-1">
+          <textarea id="input" rows="1" placeholder="输入你的回答，或按住左边麦克风说话…"
+            class="w-full max-h-32 rounded-xl border border-line bg-panel/80 px-4 py-3 pr-16 text-[14px] leading-relaxed text-gray-100 placeholder-gray-600 outline-none transition focus:border-indigo-500/60"></textarea>
+          <span id="charCount" class="absolute bottom-2.5 right-3 text-[10px] text-gray-600"></span>
+        </div>
+
+        <!-- 发送 -->
+        <button id="sendBtn"
+          class="grid h-12 w-12 shrink-0 place-items-center rounded-xl btn-grad text-white transition disabled:opacity-40">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m22 2-7 20-4-9-9-4 20-7Z"/>
+          </svg>
+        </button>
+      </div>
+
+      <p id="tip" class="mt-2 text-center text-[11px] text-gray-600">
+        首次使用建议先选 <span class="text-gray-400">L1 温和陪练</span>
+      </p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* =========================================================
+   配置
+   ========================================================= */
+const API_BASE = '';                 // 同源部署留空；若前端单独打开，改成 'http://127.0.0.1:8000'
+const MAX_ROUNDS = 4;
+
+/* =========================================================
+   状态
+   ========================================================= */
+const state = {
+  sessionId: null,
+  started: false,
+  finished: false,
+  busy: false,
+  ttsOn: true,
+  round: 0,
+  history: [],
+};
+
+/* =========================================================
+   DOM
+   ========================================================= */
+const $ = (id) => document.getElementById(id);
+const messagesEl = $('messages');
+const chatArea = $('chatArea');
+const welcomeEl = $('welcome');
+const inputEl = $('input');
+const sendBtn = $('sendBtn');
+const micBtn = $('micBtn');
+const startBtn = $('startBtn');
+const resetBtn = $('resetBtn');
+const roleInput = $('roleInput');
+const roleClear = $('roleClear');
+const pressureSelect = $('pressureSelect');
+const statusDot = $('statusDot');
+const statusText = $('statusText');
+const roundText = $('roundText');
+const tipEl = $('tip');
+const speechHint = $('speechHint');
+const ttsToggle = $('ttsToggle');
+const micLabel = $('micLabel');
+const charCount = $('charCount');
+
+/* =========================================================
+   工具函数
+   ========================================================= */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => {
+    chatArea.scrollTop = chatArea.scrollHeight;
+  });
+}
+
+function setStatus(kind, text) {
+  const colors = {
+    ok: 'bg-emerald-500',
+    busy: 'bg-amber-400',
+    err: 'bg-red-500',
+    idle: 'bg-gray-600',
+  };
+  statusDot.className = 'inline-block h-1.5 w-1.5 rounded-full ' + (colors[kind] || colors.idle);
+  statusText.textContent = text;
+}
+
+function setBusy(v) {
+  state.busy = v;
+  sendBtn.disabled = v || state.finished || !state.started;
+  micBtn.disabled = v || state.finished || !state.started;
+  inputEl.disabled = v || state.finished;
+}
+
+/* =========================================================
+   渲染：气泡
+   ========================================================= */
+function addBubble(role, text, opts = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex animate-fade-up gap-3 ' + (role === 'user' ? 'flex-row-reverse' : '');
+
+  // 头像
+  const avatar = document.createElement('div');
+  avatar.className = role === 'user'
+    ? 'grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10 text-[11px] font-medium text-white'
+    : 'grid h-8 w-8 shrink-0 place-items-center rounded-lg btn-grad';
+  avatar.innerHTML = role === 'user'
+    ? '你'
+    : `<svg class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+         <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>`;
+
+  // 气泡
+  const bubble = document.createElement('div');
+  const isUser = role === 'user';
+  bubble.className = [
+    'max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[14px] leading-[1.75]',
+    isUser ? 'bubble-user text-white rounded-tr-sm' : 'bubble-ai text-gray-100 rounded-tl-sm',
+  ].join(' ');
+
+  if (opts.html) bubble.innerHTML = text;
+  else bubble.textContent = text;
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+  return bubble;
+}
+
+function addTyping() {
+  const wrap = document.createElement('div');
+  wrap.id = 'typingIndicator';
+  wrap.className = 'flex animate-fade-up gap-3';
+  wrap.innerHTML = `
+    <div class="grid h-8 w-8 shrink-0 place-items-center rounded-lg btn-grad">
+      <svg class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+    </div>
+    <div class="bubble-ai flex items-center rounded-2xl rounded-tl-sm px-4 py-3.5">
+      <div class="typing flex items-center"><span></span><span></span><span></span></div>
+    </div>`;
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function removeTyping() {
+  const el = $('typingIndicator');
+  if (el) el.remove();
+}
+
+/* =========================================================
+   渲染：评分报告卡片
+   ========================================================= */
+function parseReport(text) {
+  const scoreMatch = text.match(/总分[：:]\s*(\d+)/);
+  const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null;
+
+  const sections = { '亮点': [], '不足': [], '改进建议': [] };
+  let cur = null;
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    if (/^【.*】$/.test(line)) continue;
+    if (/^亮点/.test(line)) { cur = '亮点'; continue; }
+    if (/^不足|^问题/.test(line)) { cur = '不足'; continue; }
+    if (/^改进建议|^建议/.test(line)) { cur = '改进建议'; continue; }
+    if (/^总分/.test(line)) continue;
+
+    const m = line.match(/^(\d+)\s*[.、)）]\s*(.+)$/);
+    const body = m ? m[2] : line.replace(/^[-•·]\s*/, '');
+    if (cur && body) sections[cur].push(body);
+  }
+  return { score, sections };
+}
+
+function scoreColor(score) {
+  if (score === null) return '#7c3aed';
+  if (score < 60) return '#ef4444';
+  if (score < 80) return '#f59e0b';
+  return '#10b981';
+}
+
+function addReportCard(text) {
+  const { score, sections } = parseReport(text);
+  const color = scoreColor(score);
+  const pct = score === null ? 0 : Math.max(0, Math.min(100, score));
+
+  const wrap = document.createElement('div');
+  wrap.className = 'animate-fade-up';
+
+  const blockHtml = (title, items, iconClass, dotClass) => {
+    if (!items.length) return '';
+    return `
+      <div class="rounded-xl border border-white/[0.06] bg-black/25 p-3.5">
+        <div class="mb-2 flex items-center gap-2 text-[12px] font-medium ${iconClass}">
+          ${title}
+        </div>
+        <ul class="space-y-1.5">
+          ${items.map((it) => `
+            <li class="flex gap-2 text-[12.5px] leading-relaxed text-gray-300">
+              <span class="mt-1.5 h-1 w-1 shrink-0 rounded-full ${dotClass}"></span>
+              <span>${esc(it)}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`;
+  };
+
+  wrap.innerHTML = `
+    <div class="report-card overflow-hidden rounded-2xl p-5 sm:p-6">
+      <div class="flex items-center justify-between gap-4 border-b border-white/[0.07] pb-4">
+        <div>
+          <div class="text-[11px] uppercase tracking-[0.18em] text-indigo-300/80">Interview Report</div>
+          <h3 class="mt-1 text-[17px] font-semibold text-white">面试评分报告</h3>
+        </div>
+        <div class="relative h-[74px] w-[74px] shrink-0">
+          <div class="ring absolute inset-0 rounded-full"
+               style="--pct:${pct}; --ring-color:${color}"></div>
+          <div class="absolute inset-[5px] grid place-items-center rounded-full bg-[#0b0b12]">
+            <div class="text-center leading-none">
+              <div class="text-[20px] font-bold" style="color:${color}">${score ?? '—'}</div>
+              <div class="mt-[2px] text-[9px] text-gray-500">/ 100</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        ${blockHtml('亮点', sections['亮点'],
+            'text-emerald-300', 'bg-emerald-400/70')}
+        ${blockHtml('不足', sections['不足'],
+            'text-rose-300', 'bg-rose-400/70')}
+        ${blockHtml('改进建议', sections['改进建议'],
+            'text-indigo-300', 'bg-indigo-400/70')}
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-2">
+        <button id="againBtn"
+          class="rounded-lg btn-grad px-4 py-2 text-[13px] font-medium text-white transition active:scale-[.98]">
+          再练一次
+        </button>
+        <button id="speakReportBtn"
+          class="rounded-lg border border-line bg-white/[0.03] px-4 py-2 text-[13px] text-gray-300 transition hover:text-white">
+          语音播报报告
+        </button>
+      </div>
+
+      <details class="mt-4 group">
+        <summary class="cursor-pointer list-none text-[11.5px] text-gray-500 transition hover:text-gray-300">
+          查看原始报告文本 ▾
+        </summary>
+        <pre class="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-black/40 p-3 text-[11.5px] leading-relaxed text-gray-400 scrollbar-thin">${esc(text)}</pre>
+      </details>
+    </div>`;
+
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+
+  $('againBtn').addEventListener('click', resetAll);
+  $('speakReportBtn').addEventListener('click', () => speak(text));
+}
+
+/* =========================================================
+   语音播报 (SpeechSynthesis)
+   ========================================================= */
+let zhVoice = null;
+function pickVoice() {
+  const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  zhVoice = voices.find((v) => /zh[-_]?CN|Chinese|普通话/i.test(v.lang + ' ' + v.name)) || voices[0] || null;
+}
+if (window.speechSynthesis) {
+  pickVoice();
+  window.speechSynthesis.onvoiceschanged = pickVoice;
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  // 报告太长，只读总分和不足，避免念到用户崩溃
+  let t = text;
+  if (t.includes('【面试评分报告】')) {
+    const score = (t.match(/总分[：:]\s*\d+/) || [''])[0];
+    t = '面试结束。' + score + '。详细报告请看屏幕。';
+  }
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang = 'zh-CN';
+  u.rate = 1.02;
+  if (zhVoice) u.voice = zhVoice;
+  window.speechSynthesis.speak(u);
+}
+
+function stopSpeak() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+/* =========================================================
+   语音识别 (SpeechRecognition) —— 按住说话
+   ========================================================= */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let listening = false;
+let baseText = '';
+let finalText = '';
+
+if (!SpeechRec) {
+  micBtn.disabled = true;
+  micBtn.title = '当前浏览器不支持语音识别';
+  speechHint.textContent = '⚠️ 当前浏览器不支持语音识别，请用 Chrome / Edge';
+  speechHint.className = 'ml-auto text-amber-400/90';
+} else {
+  recognition = new SpeechRec();
+  recognition.lang = 'zh-CN';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    listening = true;
+    micBtn.classList.add('mic-listening');
+    micLabel.classList.remove('hidden');
+    setStatus('busy', '正在听…说完松开');
+  };
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const r = event.results[i];
+      if (r.isFinal) finalText += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    inputEl.value = (baseText + finalText + interim).slice(0, 2000);
+    autoGrow();
+    updateCharCount();
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      tipEl.innerHTML = '<span class="text-rose-400">麦克风被拒绝</span>：请点击地址栏左侧图标，允许使用麦克风';
+    } else if (e.error === 'no-speech') {
+      tipEl.innerHTML = '<span class="text-amber-400">没听到声音</span>：请靠近麦克风再说一次';
+    } else {
+      tipEl.innerHTML = `<span class="text-rose-400">语音识别出错</span>：${e.error}`;
+    }
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    micBtn.classList.remove('mic-listening');
+    micLabel.classList.add('hidden');
+    if (!state.busy) setStatus('ok', '就绪');
+    inputEl.focus();
+  };
+}
+
+function startListening() {
+  if (!recognition || listening || state.busy || state.finished) return;
+  stopSpeak();                       // 避免 AI 声音被录进去
+  baseText = inputEl.value ? inputEl.value.trim() + ' ' : '';
+  finalText = '';
+  try {
+    recognition.start();
+  } catch (e) {
+    // 重复 start 会抛错，忽略
+  }
+}
+
+function stopListening() {
+  if (!recognition || !listening) return;
+  try { recognition.stop(); } catch (e) {}
+}
+
+// 按住说话：pointer 事件同时覆盖鼠标与触屏
+micBtn.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  startListening();
+});
+['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => {
+  micBtn.addEventListener(ev, (e) => {
+    e.preventDefault();
+    stopListening();
+  });
+});
+
+// 键盘/无障碍：空格按住也能说
+micBtn.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); startListening(); }
+});
+micBtn.addEventListener('keyup', (e) => {
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); stopListening(); }
+});
+
+/* =========================================================
+   输入框行为
+   ========================================================= */
+function autoGrow() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 128) + 'px';
+}
+
+function updateCharCount() {
+  const n = inputEl.value.length;
+  charCount.textContent = n ? n : '';
+}
+
+inputEl.addEventListener('input', () => { autoGrow(); updateCharCount(); });
+
+inputEl.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+/* =========================================================
+   岗位输入（支持自由输入 + 下拉建议）
+   ========================================================= */
+const ROLE_STORAGE_KEY = 'mianba:role';
+
+function currentRole() {
+  return (roleInput.value || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+}
+
+function syncRoleClear() {
+  if (roleInput.disabled) { roleClear.classList.add('hidden'); return; }
+  roleClear.classList.toggle('hidden', !roleInput.value);
+}
+
+roleInput.addEventListener('input', () => {
+  syncRoleClear();
+  try { localStorage.setItem(ROLE_STORAGE_KEY, roleInput.value); } catch (e) {}
+});
+
+roleInput.addEventListener('keydown', (e) => {
+  // 在岗位框里按回车直接开始面试，体验更顺
+  if (e.key === 'Enter' && !state.started) {
+    e.preventDefault();
+    startInterview();
+  }
+});
+
+roleClear.addEventListener('click', () => {
+  roleInput.value = '';
+  syncRoleClear();
+  try { localStorage.removeItem(ROLE_STORAGE_KEY); } catch (e) {}
+  roleInput.focus();
+});
+
+// 恢复上次输入的岗位
+(function restoreRole() {
+  try {
+    const saved = localStorage.getItem(ROLE_STORAGE_KEY);
+    if (saved) roleInput.value = saved;
+  } catch (e) {}
+  syncRoleClear();
+})();
+
+/* =========================================================
+   API
+   ========================================================= */
+/* 访问码：从网址 ?code=xxx 读取并记住，公网部署时用来挡陌生人 */
+const CODE_KEY = 'mianba:code';
+function getAccessCode() {
+  const url = new URLSearchParams(location.search);
+  const fromUrl = url.get('code');
+  if (fromUrl) {
+    try { localStorage.setItem(CODE_KEY, fromUrl); } catch (e) {}
+    return fromUrl;
+  }
+  try { return localStorage.getItem(CODE_KEY) || ''; } catch (e) { return ''; }
+}
+
+function authHeaders(extra) {
+  const h = Object.assign({}, extra || {});
+  const code = getAccessCode();
+  if (code) h['X-Access-Code'] = code;
+  return h;
+}
+
+async function apiChat(userInput) {
+  const payload = {
+    session_id: state.sessionId,
+    role: currentRole(),
+    pressure_level: parseInt(pressureSelect.value, 10),
+    user_input: userInput,
+    history: state.history,
+  };
+  const res = await fetch(API_BASE + '/api/chat', {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    throw new Error('需要访问码。请在网址后面加上 ?code=你的访问码 再打开本页。');
+  }
+  if (res.status === 429) {
+    throw new Error(data.error || '今天的免费次数已用完。');
+  }
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.error || `请求失败（HTTP ${res.status}）`);
+  }
+  return data;
+}
+
+async function checkHealth() {
+  try {
+    const res = await fetch(API_BASE + '/api/health');
+    const d = await res.json();
+
+    if (d.access_code_required && !getAccessCode()) {
+      setStatus('err', '需要访问码');
+      tipEl.innerHTML = '<span class="text-rose-400">这个链接需要访问码</span>：请在网址后加 <code class="text-gray-300">?code=访问码</code>';
+      return;
+    }
+
+    if (d.api_key_configured) {
+      const limit = d.daily_limit_per_ip > 0 ? `每天 ${d.daily_limit_per_ip} 次额度` : '不限次数';
+      setStatus('ok', '就绪');
+      tipEl.innerHTML = `首次使用建议先选 <span class="text-gray-400">L1 温和陪练</span> <span class="text-gray-600">· ${limit}</span>`;
+    } else {
+      setStatus('err', '后端未配置 API Key');
+      tipEl.innerHTML = '<span class="text-rose-400">请先编辑 .env 填入 DEEPSEEK_API_KEY</span>';
+    }
+  } catch (e) {
+    setStatus('err', '无法连接后端');
+    tipEl.innerHTML = '<span class="text-rose-400">后端没启动？</span> 请先运行 uvicorn';
+  }
+}
+
+/* =========================================================
+   业务流程
+   ========================================================= */
+async function startInterview() {
+  if (state.busy) return;
+
+  // 岗位必填校验
+  if (!currentRole()) {
+    tipEl.innerHTML = '<span class="text-rose-400">请先填写岗位</span>：比如「产品经理」「前端开发」「考研复试」';
+    roleInput.focus();
+    roleInput.classList.add('ring-1', 'ring-rose-500/70');
+    setTimeout(() => roleInput.classList.remove('ring-1', 'ring-rose-500/70'), 1600);
+    return;
+  }
+
+  state.sessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  state.history = [];
+  state.started = true;
+  state.finished = false;
+
+  welcomeEl?.remove();
+  setBusy(true);
+  setStatus('busy', 'AI 正在准备问题…');
+  addTyping();
+
+  try {
+    const data = await apiChat('');
+    removeTyping();
+    if (data.history) state.history = data.history;
+    state.round = data.round || 1;
+
+    addBubble('ai', data.reply);
+    if (state.ttsOn) speak(data.reply);
+
+    roundText.textContent = `第 ${state.round} / ${MAX_ROUNDS} 轮`;
+    setStatus('ok', '等你回答');
+    tipEl.innerHTML = '按住麦克风说话，或直接打字（Ctrl/⌘ + Enter 发送）';
+  } catch (err) {
+    removeTyping();
+    addBubble('ai', '⚠️ ' + err.message);
+    setStatus('err', '启动失败');
+    state.started = false;
+  } finally {
+    setBusy(false);
+    inputEl.focus();
+  }
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || state.busy || state.finished || !state.started) return;
+
+  stopListening();
+  stopSpeak();
+
+  addBubble('user', text);
+  inputEl.value = '';
+  autoGrow();
+  updateCharCount();
+
+  // 本地先记一条，保证 history 与服务端一致（服务端也会记录）
+  state.history.push({ role: 'user', content: text });
+
+  setBusy(true);
+  setStatus('busy', 'AI 正在思考…');
+  addTyping();
+
+  try {
+    const data = await apiChat(text);
+    removeTyping();
+
+    if (data.history) state.history = data.history;
+    state.round = data.round || state.round;
+
+    if (data.is_report || String(data.reply).includes('【面试评分报告】')) {
+      addBubble('ai', '面试结束，这是你的评分报告 👇');
+      addReportCard(data.reply);
+      state.finished = true;
+      roundText.textContent = '已完成';
+      setStatus('ok', '面试完成');
+      setBusy(false);
+      sendBtn.disabled = true;
+      micBtn.disabled = true;
+      inputEl.disabled = true;
+      tipEl.innerHTML = '想再来一轮？点报告里的「再练一次」';
+      return;
+    }
+
+    addBubble('ai', data.reply);
+    if (state.ttsOn) speak(data.reply);
+
+    roundText.textContent = `第 ${state.round} / ${MAX_ROUNDS} 轮`;
+    setStatus('ok', '等你回答');
+  } catch (err) {
+    removeTyping();
+    addBubble('ai', '⚠️ ' + err.message);
+    setStatus('err', '出错了');
+  } finally {
+    if (!state.finished) setBusy(false);
+    inputEl.focus();
+  }
+}
+
+async function resetAll() {
+  stopSpeak();
+  stopListening();
+  try {
+    await fetch(API_BASE + '/api/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: state.sessionId }),
+    });
+  } catch (e) { /* 忽略 */ }
+
+  state.sessionId = null;
+  state.started = false;
+  state.finished = false;
+  state.round = 0;
+  state.history = [];
+
+  messagesEl.innerHTML = '';
+  messagesEl.appendChild(welcomeEl || buildWelcome());
+  roundText.textContent = '未开始';
+  inputEl.value = '';
+  inputEl.disabled = false;
+  autoGrow();
+  updateCharCount();
+  setBusy(false);
+  setStatus('ok', '就绪');
+  tipEl.innerHTML = '首次使用建议先选 <span class="text-gray-400">L1 温和陪练</span>';
+  bindWelcome();
+}
+
+/* 重开时欢迎卡片被移除过，需要重建 */
+function buildWelcome() {
+  const d = document.createElement('div');
+  d.id = 'welcome';
+  d.className = 'animate-fade-up';
+  d.innerHTML = `
+    <div class="rounded-2xl border border-line bg-panel/60 p-6 backdrop-blur">
+      <h2 class="text-lg font-semibold text-white">准备好了吗？</h2>
+      <p class="mt-2 text-[13.5px] leading-relaxed text-gray-400">
+        在顶部填好岗位和压力等级，点
+        <span class="text-indigo-300 font-medium">开始面试</span>。
+        AI 面试官会按你的回答追问，共 <span class="text-gray-200">4 轮</span>，最后给出评分报告。
+      </p>
+      <button id="startBtn"
+        class="mt-5 w-full rounded-xl btn-grad px-5 py-3 text-[14px] font-medium text-white transition active:scale-[.98] sm:w-auto sm:px-8">
+        开始面试
+      </button>
+    </div>`;
+  return d;
+}
+
+function bindWelcome() {
+  const btn = $('startBtn');
+  if (btn) btn.onclick = startInterview;
+}
+
+/* =========================================================
+   初始化
+   ========================================================= */
+bindWelcome();
+startBtn && (startBtn.onclick = startInterview);
+resetBtn.onclick = resetAll;
+
+ttsToggle.addEventListener('click', () => {
+  state.ttsOn = !state.ttsOn;
+  if (!state.ttsOn) stopSpeak();
+  ttsToggle.classList.toggle('text-indigo-400', state.ttsOn);
+  ttsToggle.classList.toggle('text-gray-500', !state.ttsOn);
+  ttsToggle.title = state.ttsOn ? 'AI 语音播报：开' : 'AI 语音播报：关';
+});
+ttsToggle.classList.add('text-indigo-400');
+
+// 锁定岗位/压力（面试中不允许改，避免上下文错乱）
+function lockSelectors(lock) {
+  roleInput.disabled = lock;
+  pressureSelect.disabled = lock;
+  roleInput.classList.toggle('opacity-50', lock);
+  pressureSelect.classList.toggle('opacity-50', lock);
+  roleClear.classList.toggle('hidden', lock || !roleInput.value);
+}
+const _origStart = startInterview;
+startInterview = async function () {
+  lockSelectors(true);
+  try { await _origStart(); } catch (e) { lockSelectors(false); }
+};
+startBtn && (startBtn.onclick = startInterview);
+bindWelcome();
+
+const _origReset = resetAll;
+resetAll = async function () {
+  lockSelectors(false);
+  await _origReset();
+};
+resetBtn.onclick = resetAll;
+
+setBusy(true);
+checkHealth().finally(() => {
+  setBusy(false);
+  sendBtn.disabled = true;   // 未开始前不能发
+  micBtn.disabled = true;
+});
+</script>
+</body>
+</html>

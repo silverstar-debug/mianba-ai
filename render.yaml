@@ -1,0 +1,21 @@
+# Render 一键部署配置
+# 用法：把本仓库连到 Render，它会自动读取这个文件创建服务
+
+services:
+  - type: web
+    name: mianba-ai
+    runtime: docker
+    plan: free
+    region: singapore          # 离国内较近；也可改 oregon / frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # 下面两个在 Render 后台手动填（不要在代码里写死）
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: ACCESS_CODE
+        sync: false
+      - key: DAILY_LIMIT_PER_IP
+        value: "80"
+      - key: MAX_ROUNDS
+        value: "4"
